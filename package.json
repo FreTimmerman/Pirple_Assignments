@@ -1,8 +1,8 @@
 {
-  "name": "fretimmerman-pirple-assignment-1",
+  "name": "fretimmerman-pirple-assignment-2",
   "type": "module",
-  "version": "1.1.0",
-  "description": "Homework Assignment 1 for Pirple Node.js Master Class",
+  "version": "1.2.0",
+  "description": "Homework Assignment 2 for Pirple Node.js Master Class",
   "main": "index.js",
   "keywords": [],
   "author": "Fre Timmerman",

@@ -1,0 +1,10 @@
+{
+  "name": "Margherita",
+  "prepareTime": 9,
+  "price": 10,
+  "ingredients": [
+    "tomato sauce",
+    "cheese"
+  ],
+  "available": true
+}

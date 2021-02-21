@@ -1,0 +1,11 @@
+{
+  "name": "Hawaii",
+  "prepareTime": 10,
+  "price": 12,
+  "ingredients": [
+    "tomato sauce",
+    "cheese",
+    "pineapple"
+  ],
+  "available": true
+}
