@@ -1,11 +1,8 @@
-# Homework Solutions for the Node.js master class
+# Homework Assignment 1 of the Node.js master class
 
-You can find the solutions to the assignments on the different branches
+## (Simple RESTful API)
 
-## Assignment 1
+*USAGE:*
 
-Simple RESTful API
-
-## Assignment 2
-
-API for a pizza delivery
+* Run the app with "node index.js"
+* Do a `GET` request to `localhost:3000/hello`
