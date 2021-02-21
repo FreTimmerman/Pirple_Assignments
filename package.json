@@ -1,0 +1,10 @@
+{
+  "name": "fretimmerman-pirple-assignments",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Homework Assignments for Pirple Node.js Master Class",
+  "main": "index.js",
+  "keywords": [],
+  "author": "Fre Timmerman",
+  "license": "GPL-3.0-only"
+}
