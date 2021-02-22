@@ -279,12 +279,15 @@ app.getSessionToken = function () {
       var token = JSON.parse(tokenString);
       app.config.sessionToken = token;
       if (typeof (token) == 'object') {
+        console.log('setloggedinclass true')
         app.setLoggedInClass(true);
       } else {
+        console.log('setloggedinclass false')
         app.setLoggedInClass(false);
       }
     } catch (e) {
       app.config.sessionToken = false;
+      console.log('setloggedinclass false with err')
       app.setLoggedInClass(false);
     }
   }
@@ -530,16 +533,16 @@ app.init = function () {
   app.bindForms();
 
   // Bind logout logout button
-  //app.bindLogoutButton();
+  app.bindLogoutButton();
 
   // Get the token from localstorage
-  //app.getSessionToken();
+  app.getSessionToken();
 
   // Renew token
-  //app.tokenRenewalLoop();
+  app.tokenRenewalLoop();
 
   // Load data on page
-  //app.loadDataOnPage();
+  app.loadDataOnPage();
 
 };
 
