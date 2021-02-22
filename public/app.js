@@ -20,7 +20,7 @@ app.client.request = function (headers, path, method, queryStringObject, payload
   // Set defaults
   headers = typeof (headers) == 'object' && headers !== null ? headers : {};
   path = typeof (path) == 'string' ? path : '/';
-  method = typeof (method) == 'string' && ['POST', 'GET', 'PUT', 'DELETE'].indexOf(method.toUpperCase()) > -1 ? method.toUpperCase() : 'GET';
+  method = typeof (method) == 'string' && ['POST', 'GET', 'PUT', 'DELETE', 'PATCH'].indexOf(method.toUpperCase()) > -1 ? method.toUpperCase() : 'GET';
   queryStringObject = typeof (queryStringObject) == 'object' && queryStringObject !== null ? queryStringObject : {};
   payload = typeof (payload) == 'object' && payload !== null ? payload : {};
   callback = typeof (callback) == 'function' ? callback : false;
@@ -94,6 +94,39 @@ app.bindLogoutButton = function () {
 
   });
 };
+
+app.addToCart = (item) => {
+  item = typeof item === 'string' ? item : false;
+  if (item) {
+
+    app.client.request(undefined, 'api/cart', 'GET', undefined, undefined, function (statusCode, responsePayload) {
+      console.log(statusCode, responsePayload)
+      const cartBody = {
+        'item': item
+      }
+      // if no cart exists, create a new one (POST)
+      if (statusCode === 500) {
+        console.log("post")
+        app.client.request(undefined, 'api/cart', 'POST', undefined, cartBody, function (statusCode, responsePayload) {
+          console.log(statusCode, responsePayload)
+        })
+
+      }
+      // if a cart exists, add to it (PATCH)
+      if (statusCode === 200) {
+        console.log("patch")
+        app.client.request(undefined, 'api/cart', 'PATCH', undefined, cartBody, function (statusCode, responsePayload) {
+          console.log(statusCode, responsePayload)
+        })
+      }
+
+
+    })
+
+
+  }
+
+}
 
 // Log the user out then redirect them
 app.logUserOut = function (redirectUser) {
@@ -358,14 +391,14 @@ app.loadDataOnPage = function () {
     app.loadAccountEditPage();
   }
 
-  // Logic for dashboard page
-  if (primaryClass == 'checksList') {
-    app.loadChecksListPage();
+  // Logic for the menu page
+  if (primaryClass == 'showMenu') {
+    app.loadShowMenuPage();
   }
 
   // Logic for check details page
-  if (primaryClass == 'checksEdit') {
-    app.loadChecksEditPage();
+  if (primaryClass == 'showOrder') {
+    app.loadShowOrderPage();
   }
 };
 
@@ -403,64 +436,44 @@ app.loadAccountEditPage = function () {
   }
 };
 
-// Load the dashboard page specifically
-app.loadChecksListPage = function () {
+// Load the menu page specifically
+app.loadShowMenuPage = function () {
   // Get the email from the current token, or log the user out if none is there
-  var email = typeof (app.config.sessionToken.email) == 'string' ? app.config.sessionToken.email : false;
-  if (email) {
-    // Fetch the user data
-    var queryStringObject = {
-      'email': email
-    };
-    app.client.request(undefined, 'api/users', 'GET', queryStringObject, undefined, function (statusCode, responsePayload) {
-      if (statusCode == 200) {
+  var token = typeof (app.config.sessionToken.id) == 'string' ? app.config.sessionToken.id : false;
+  if (token) {
+    // Fetch the menu data
+    const headers = {
+      'token': token
+    }
 
-        // Determine how many checks the user has
-        var allChecks = typeof (responsePayload.checks) == 'object' && responsePayload.checks instanceof Array && responsePayload.checks.length > 0 ? responsePayload.checks : [];
-        if (allChecks.length > 0) {
+    // get all the menu items
+    app.client.request(undefined, 'api/menu', 'GET', undefined, undefined, (statusCode, responsePayload) => {
+      if (statusCode === 200) {
 
-          // Show each created check as a new row in the table
-          allChecks.forEach(function (checkId) {
-            // Get the data for the check
-            var newQueryStringObject = {
-              'id': checkId
-            };
-            app.client.request(undefined, 'api/checks', 'GET', newQueryStringObject, undefined, function (statusCode, responsePayload) {
-              if (statusCode == 200) {
-                var checkData = responsePayload;
-                // Make the check data into a table row
-                var table = document.getElementById("checksListTable");
-                var tr = table.insertRow(-1);
-                tr.classList.add('checkRow');
-                var td0 = tr.insertCell(0);
-                var td1 = tr.insertCell(1);
-                var td2 = tr.insertCell(2);
-                var td3 = tr.insertCell(3);
-                var td4 = tr.insertCell(4);
-                td0.innerHTML = responsePayload.method.toUpperCase();
-                td1.innerHTML = responsePayload.protocol + '://';
-                td2.innerHTML = responsePayload.url;
-                var state = typeof (responsePayload.state) == 'string' ? responsePayload.state : 'unknown';
-                td3.innerHTML = state;
-                td4.innerHTML = '<a href="/checks/edit?id=' + responsePayload.id + '">View / Edit / Delete</a>';
-              } else {
-                console.log("Error trying to load check ID: ", checkId);
-              }
-            });
+
+        // show the menu in a nice list
+        const table = document.getElementById("menuTable");
+        for (let menuItem in responsePayload) {
+          let tr = table.insertRow(-1);
+
+          tr.classList.add('menuRow');
+          const td0 = tr.insertCell(0);
+          const td1 = tr.insertCell(1);
+          const td2 = tr.insertCell(2);
+          const td3 = tr.insertCell(3);
+          td0.innerHTML = responsePayload[menuItem].name;
+          td1.innerHTML = responsePayload[menuItem].ingredients.join(", ");
+          td2.innerHTML = responsePayload[menuItem].price;
+          td3.innerHTML = '<a href="#">Add to Cart</a>'; // TODO this could be a nice icon
+          td3.addEventListener("click", function (e) {
+
+            // Stop it from redirecting anywhere
+            e.preventDefault();
+
+            // add item to cart
+            app.addToCart(responsePayload[menuItem].name);
+
           });
-
-          if (allChecks.length < 5) {
-            // Show the createCheck CTA
-            document.getElementById("createCheckCTA").style.display = 'block';
-          }
-
-        } else {
-          // Show 'you have no checks' message
-          document.getElementById("noChecksMessage").style.display = 'table-row';
-
-          // Show the createCheck CTA
-          document.getElementById("createCheckCTA").style.display = 'block';
-
         }
       } else {
         // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
