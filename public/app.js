@@ -388,7 +388,7 @@ app.loadAccountEditPage = function () {
         document.querySelector("#accountEdit1 .zipInput").value = responsePayload.zip;
 
         // Put the hidden email field into both forms
-        var hiddenEmailInputs = document.querySelectorAll("input.hiddenEmailNumberInput");
+        var hiddenEmailInputs = document.querySelectorAll("input.hiddenEmailInput");
         for (var i = 0; i < hiddenEmailInputs.length; i++) {
           hiddenEmailInputs[i].value = responsePayload.email;
         }
