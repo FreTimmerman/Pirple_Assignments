@@ -4,13 +4,14 @@ API for a pizza-delivery
 
 ## Table of Contents <!-- omit in toc -->
 
-- [USAGE tutorial](#usage-tutorial)
-  - [Setup](#setup)
-  - [Create a new user](#create-a-new-user)
-  - [Login](#login)
-  - [Read the menu](#read-the-menu)
-  - [Add items to cart](#add-items-to-cart)
-  - [Create an order](#create-an-order)
+- [Setup](#setup)
+- [Frontend USAGE tutorial](#frontend-usage-tutorial)
+- [API USAGE tutorial](#api-usage-tutorial)
+  - [Create a new user (API)](#create-a-new-user-api)
+  - [Login (API)](#login-api)
+  - [Read the menu (API)](#read-the-menu-api)
+  - [Add items to cart (API)](#add-items-to-cart-api)
+  - [Create an order (API)](#create-an-order-api)
 - [Full API documentation](#full-api-documentation)
   - [**User** actions](#user-actions)
     - [GET /users](#get-users)
@@ -33,9 +34,7 @@ API for a pizza-delivery
     - [POST /order](#post-order)
 - [Original Assignment](#original-assignment)
 
-## USAGE tutorial
-
-### Setup
+## Setup
 
 - rename `config_example.js` to `config.js` and fill in all the necessary variables.
 
@@ -50,7 +49,25 @@ API for a pizza-delivery
 
   (that's right, you don't need to install any dependencies for this API)
 
-### Create a new user
+## Frontend USAGE tutorial
+
+- go to `http://localhost:3000/`
+- create a new user (or log in if you already have)  and fill in your account detail
+- click `get started` (or `login`)
+  
+  you will be logged in and you will see the menu
+
+- on the items you want to buy, click `add to cart` (you can enter an optional remark, for example: no cheese)
+- click in the top menu on `cart` to see your current cart (tip: this cart gets saved even when you log out)
+- you can remove items from your cart, or when you're finished, you can click `order these items`
+- you will see the total amount on the order page, here you can also optionally add a remark (for example: knock hard, doorbell is broken)
+- enter your card data (for mock data, you can use `4242 4242 4242 4242` as card number, and any date in the future, and any cvc, and any postcode)
+- if you press `confirm payment and create order` you will be charged on the provided card, and you will receive an email with the receipt.
+- you will be sent to a confirmation page, where you can see the estimated delivery time.
+
+## API USAGE tutorial
+
+### Create a new user (API)
 
 - send a `POST` request to `http://localhost:3000/users` with JSON payload
 
@@ -77,7 +94,7 @@ API for a pizza-delivery
   }
   ```
 
-### Login
+### Login (API)
 
 now you can use this user's email and password to login
 
@@ -102,7 +119,7 @@ now you can use this user's email and password to login
 
 - you can use this token id for authenticating your user for these next steps
   
-### Read the menu
+### Read the menu (API)
 
 get the menu to choose items to put in the cart
 
@@ -152,7 +169,7 @@ get the menu to choose items to put in the cart
   }
   ```
 
-### Add items to cart
+### Add items to cart (API)
 
 - create a new cart by sending a `POST` request to `http://localhost:3000/cart` with header
 
@@ -188,7 +205,7 @@ get the menu to choose items to put in the cart
   }
   ```
 
-### Create an order
+### Create an order (API)
 
  converting your cart into an order
 
@@ -365,20 +382,14 @@ converts existing cart to an order
 
 **Details (Scenario):**
 
-You are building the API for a pizza-delivery company. Don't worry about a frontend, just build the API. Here's the spec from your project manager:
+It is time to build a simple frontend for the Pizza-Delivery API you created in Homework Assignment #2. Please create a web app that allows customers to:
 
-[x] New users can be created, their information can be edited, and they can be deleted. We should store their name, email address, and street address.
+[x] Signup on the site
 
-[x] Users can log in and log out by creating or destroying a token.
+[x] View all the items available to order
 
-[x] When a user is logged in, they should be able to GET all the possible menu items (these items can be hardcoded into the system).
+[x] Fill up a shopping cart
 
-[x] A logged-in user should be able to fill a shopping cart with menu items
+[x] Place an order (with fake credit card credentials), and receive an email receipt
 
-[x] A logged-in user should be able to create an order. You should integrate with the Sandbox of Stripe.com to accept their payment. Note: Use the stripe sandbox for your testing. Follow this link and click on the "tokens" tab to see the fake tokens you can use server-side to confirm the integration is working: <https://stripe.com/docs/testing#cards>
-
-[x] When an order is placed, you should email the user a receipt. You should integrate with the sandbox of Mailgun.com for this. Note: Every Mailgun account comes with a sandbox email account domain (whatever@sandbox123.mailgun.org) that you can send from by default. So, there's no need to setup any DNS for your domain for this task <https://documentation.mailgun.com/en/latest/faqs.html#how-do-i-pick-a-domain-name-for-my-mailgun-account>
-
-**Important Note: If you use external libraries (NPM) to integrate with Stripe or Mailgun, you will not pass this assignment. You must write your API calls from scratch. Look up the "Curl" documentation for both APIs so you can figure out how to craft your API calls.**
-
-This is an open-ended assignment. You may take any direction you'd like to go with it, as long as your project includes the requirements. It can include anything else you wish as well.
+This is an open-ended assignment. You can take any direction you'd like to go with it, as long as your project includes the requirements. It can include anything else you wish as well.

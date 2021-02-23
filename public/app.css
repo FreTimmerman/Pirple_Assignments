@@ -295,3 +295,26 @@ td a, td a:hover, td a:active {
   margin-top: 40px;
   display: none;
 }
+
+/* cart size bubble */
+
+#cartMenuButton {
+  top: -3px;
+  right: 0px;
+  padding-top: 1px;
+  position: absolute;
+  background-color: #ff782a;
+  border-radius: 50%;
+  width: 14px;
+  height: 13px;
+  visibility: hidden;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+#totalPrice, #waitTime {
+  font-size: 15px;
+  font-weight: 900;
+  color: blue;
+}

@@ -11,6 +11,10 @@ app.config = {
   'sessionToken': false
 };
 
+// initialize Stripe
+var stripe;
+var clientsecret;
+
 // AJAX Client (for RESTful API)
 app.client = {}
 
@@ -95,37 +99,96 @@ app.bindLogoutButton = function () {
   });
 };
 
-app.addToCart = (item) => {
+app.addToCart = (item, remark) => {
   item = typeof item === 'string' ? item : false;
   if (item) {
-
     app.client.request(undefined, 'api/cart', 'GET', undefined, undefined, function (statusCode, responsePayload) {
-      console.log(statusCode, responsePayload)
       const cartBody = {
-        'item': item
+        'name': item,
+        'remark': remark
       }
       // if no cart exists, create a new one (POST)
       if (statusCode === 500) {
-        console.log("post")
         app.client.request(undefined, 'api/cart', 'POST', undefined, cartBody, function (statusCode, responsePayload) {
-          console.log(statusCode, responsePayload)
+          if (statusCode === 200) {
+            app.showCartCount();
+          }
         })
-
       }
       // if a cart exists, add to it (PATCH)
       if (statusCode === 200) {
-        console.log("patch")
         app.client.request(undefined, 'api/cart', 'PATCH', undefined, cartBody, function (statusCode, responsePayload) {
-          console.log(statusCode, responsePayload)
+          if (statusCode === 200) {
+            app.showCartCount();
+          }
+
         })
       }
-
-
     })
-
-
   }
+}
 
+app.removeFromCart = (index) => {
+  index = typeof parseInt(index) == 'number' ? parseInt(index) : false;
+  if (index >= 0) {
+
+    app.client.request(undefined, 'api/cart', 'GET', undefined, undefined, function (statusCode, responsePayload) {
+      if (statusCode === 200) {
+        let cart = responsePayload.items;
+        // if there are more than 1 item in cart, send a PUT
+        if (cart.length > 1) {
+          //remove the item from the cartdata
+          cart.splice(index, 1)
+
+          //we don't need to send the price, we know that in our backend.
+          const cartBody = {
+            'items': cart.map(item => {
+              delete item.price;
+              return item;
+            })
+          };
+          //send the new cartdata as PUT
+          app.client.request(undefined, 'api/cart', 'PUT', undefined, cartBody, function (statusCode, responsePayload) {
+            if (statusCode === 200) {
+
+              app.showCartCount();
+              app.loadShowCartPage();
+            }
+          });
+
+        } else {
+          // if only 1 item in cart, send DELETE
+          app.client.request(undefined, 'api/cart', 'DELETE', undefined, undefined, function (statusCode, responsePayload) {
+            if (statusCode === 200) {
+              app.loadShowCartPage();
+              document.querySelector("#cartMenuButton").style.visibility = 'hidden';
+            }
+          });
+        }
+
+      }
+    })
+  }
+}
+
+// show the amount of items in the cart as bubble in the navbar
+app.showCartCount = () => {
+  if (app.config.sessionToken) {
+    app.client.request(undefined, 'api/cart', 'GET', undefined, undefined, function (statusCode, responsePayload) {
+      if (responsePayload && statusCode === 200) {
+        count = responsePayload.items.length;
+
+        if (count > 0) {
+          document.querySelector("#cartMenuButton").innerHTML = count;
+          document.querySelector("#cartMenuButton").style.visibility = 'visible';
+        } else {
+          document.querySelector("#cartMenuButton").style.visibility = 'hidden';
+        }
+      } else {
+        document.querySelector("#cartMenuButton").style.visibility = 'hidden';
+      }
+    });
+  }
 }
 
 // Log the user out then redirect them
@@ -397,9 +460,20 @@ app.loadDataOnPage = function () {
   }
 
   // Logic for check details page
+  if (primaryClass == 'showCart') {
+    app.loadShowCartPage();
+  }
+
+  // Logic for order page
   if (primaryClass == 'showOrder') {
     app.loadShowOrderPage();
   }
+
+  // Logic for order completion page
+  if (primaryClass == 'showOrderComplete') {
+    app.loadShowOrderCompletePage();
+  }
+
 };
 
 // Load the account edit page specifically
@@ -413,6 +487,7 @@ app.loadAccountEditPage = function () {
     };
     app.client.request(undefined, 'api/users', 'GET', queryStringObject, undefined, function (statusCode, responsePayload) {
       if (statusCode == 200) {
+
         // Put the data into the forms as values where needed
         document.querySelector("#accountEdit1 .firstNameInput").value = responsePayload.firstName;
         document.querySelector("#accountEdit1 .lastNameInput").value = responsePayload.lastName;
@@ -442,17 +517,15 @@ app.loadShowMenuPage = function () {
   var token = typeof (app.config.sessionToken.id) == 'string' ? app.config.sessionToken.id : false;
   if (token) {
     // Fetch the menu data
-    const headers = {
-      'token': token
-    }
+
 
     // get all the menu items
     app.client.request(undefined, 'api/menu', 'GET', undefined, undefined, (statusCode, responsePayload) => {
       if (statusCode === 200) {
 
-
         // show the menu in a nice list
         const table = document.getElementById("menuTable");
+
         for (let menuItem in responsePayload) {
           let tr = table.insertRow(-1);
 
@@ -461,20 +534,22 @@ app.loadShowMenuPage = function () {
           const td1 = tr.insertCell(1);
           const td2 = tr.insertCell(2);
           const td3 = tr.insertCell(3);
-          td0.innerHTML = responsePayload[menuItem].name;
-          td1.innerHTML = responsePayload[menuItem].ingredients.join(", ");
-          td2.innerHTML = responsePayload[menuItem].price;
+          td0.innerHTML = `<div class='itemname'>${responsePayload[menuItem].name}</div><div class='itemdescription'>${responsePayload[menuItem].ingredients.join(", ")}</div>`;
+
+          td1.innerHTML = responsePayload[menuItem].price;
+          td2.innerHTML = "<input type='text' id='menuItem" + menuItem + "' placeholder='remark'/>";
+
           td3.innerHTML = '<a href="#">Add to Cart</a>'; // TODO this could be a nice icon
           td3.addEventListener("click", function (e) {
-
             // Stop it from redirecting anywhere
             e.preventDefault();
-
             // add item to cart
-            app.addToCart(responsePayload[menuItem].name);
 
+            app.addToCart(responsePayload[menuItem].name, document.querySelector("#menuItem" + menuItem).value);
+            document.querySelector("#menuItem" + menuItem).value = "";
           });
         }
+
       } else {
         // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
         app.logUserOut();
@@ -485,47 +560,171 @@ app.loadShowMenuPage = function () {
   }
 };
 
+// Load the cart page specifically
+app.loadShowCartPage = function () {
+  // Get the email from the current token, or log the user out if none is there
+  var token = typeof (app.config.sessionToken.id) == 'string' ? app.config.sessionToken.id : false;
+  if (token) {
 
-// Load the checks edit page specifically
-app.loadChecksEditPage = function () {
-  // Get the check id from the query string, if none is found then redirect back to dashboard
-  var id = typeof (window.location.href.split('=')[1]) == 'string' && window.location.href.split('=')[1].length > 0 ? window.location.href.split('=')[1] : false;
-  if (id) {
-    // Fetch the check data
-    var queryStringObject = {
-      'id': id
-    };
-    app.client.request(undefined, 'api/checks', 'GET', queryStringObject, undefined, function (statusCode, responsePayload) {
-      if (statusCode == 200) {
+    // prepare the table
+    const table = document.getElementById("cartTable");
+    table.innerHTML = '  <tr> \
+          <th>name</th> \
+          <th>remark</th> \
+          <th>€</th>\
+          <th></th>\
+          </tr>';
 
-        // Put the hidden id field into both forms
-        var hiddenIdInputs = document.querySelectorAll("input.hiddenIdInput");
-        for (var i = 0; i < hiddenIdInputs.length; i++) {
-          hiddenIdInputs[i].value = responsePayload.id;
+    // Fetch the menu data
+
+    // get all the menu items
+    app.client.request(undefined, 'api/cart', 'GET', undefined, undefined, (statusCode, responsePayload) => {
+
+      if (responsePayload && statusCode === 200) {
+        const cartItems = responsePayload.items;
+        // show the menu in a nice list
+
+        for (let cartItem in cartItems) {
+          let tr = table.insertRow(-1);
+          tr.classList.add('menuRow');
+          const td0 = tr.insertCell(0);
+          const td1 = tr.insertCell(1);
+          const td2 = tr.insertCell(2);
+          const td3 = tr.insertCell(3);
+          td0.innerHTML = cartItems[cartItem].name;
+          td1.innerHTML = cartItems[cartItem].remark; // TODO this could be an inputfield with eventlistner
+          td2.innerHTML = cartItems[cartItem].price;
+          td3.innerHTML = '<a href="#">Remove from Cart</a>'; // TODO this could be a nice icon
+          td3.addEventListener("click", function (e) {
+
+            // Stop it from redirecting anywhere
+            e.preventDefault();
+
+            // add item to cart
+            app.removeFromCart(cartItem);
+
+          });
         }
 
-        // Put the data into the top form as values where needed
-        document.querySelector("#checksEdit1 .displayIdInput").value = responsePayload.id;
-        document.querySelector("#checksEdit1 .displayStateInput").value = responsePayload.state;
-        document.querySelector("#checksEdit1 .protocolInput").value = responsePayload.protocol;
-        document.querySelector("#checksEdit1 .urlInput").value = responsePayload.url;
-        document.querySelector("#checksEdit1 .methodInput").value = responsePayload.method;
-        document.querySelector("#checksEdit1 .timeoutInput").value = responsePayload.timeoutSeconds;
-        var successCodeCheckboxes = document.querySelectorAll("#checksEdit1 input.successCodesInput");
-        for (var i = 0; i < successCodeCheckboxes.length; i++) {
-          if (responsePayload.successCodes.indexOf(parseInt(successCodeCheckboxes[i].value)) > -1) {
-            successCodeCheckboxes[i].checked = true;
-          }
-        }
       } else {
-        // If the request comes back as something other than 200, redirect back to dashboard
-        window.location = '/menu';
+        // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
+        //app.logUserOut();
       }
     });
   } else {
-    window.location = '/menu';
+    app.logUserOut();
   }
 };
+
+app.confirmPayment = (cardElement, clientName) => {
+  stripe.confirmCardPayment(clientsecret, {
+    payment_method: {
+      card: cardElement,
+      billing_details: {
+        name: clientName,
+      },
+    },
+  })
+    .then(function (result) {
+      // Handle result.error or result.paymentIntent
+      if (result.error) {
+        console.log(result.error);
+      } else {
+
+        if (result.paymentIntent.status === "succeeded") {
+          const payload = {
+            'paymentIntentID': result.paymentIntent.id,
+            'remark': document.querySelector("#orderRemark").value
+          };
+          app.client.request(undefined, 'api/order', 'POST', undefined, payload, (statusCode, responsePayload) => {
+            if (responsePayload && statusCode === 200) {
+              window.location = '/order/created?waitTime=' + responsePayload.WaitTime;
+            }
+          });
+        }
+      }
+    });
+}
+
+
+app.loadShowOrderPage = () => {
+  // Get the email from the current token, or log the user out if none is there
+  var token = typeof (app.config.sessionToken.id) == 'string' ? app.config.sessionToken.id : false;
+  if (token) {
+
+    let elements = stripe.elements();
+    let cardElement = elements.create('card');
+    cardElement.mount('#card-element');
+
+    // prepare the table
+    const table = document.getElementById("orderTable");
+    table.innerHTML = '  <tr> \
+        <th>name</th> \
+        <th>remark</th> \
+        <th>€</th>\
+        </tr>';
+
+    // Fetch the cart data
+
+    // get all the cart items
+    app.client.request(undefined, 'api/cart', 'GET', undefined, undefined, (statusCode, responsePayload) => {
+      if (responsePayload && statusCode === 200) {
+        const userEmail = responsePayload.user;
+        const cartItems = responsePayload.items;
+
+        // show the menu in a nice list
+        let total = 0;
+        for (let cartItem in cartItems) {
+          let tr = table.insertRow(-1);
+          tr.classList.add('menuRow');
+          const td0 = tr.insertCell(0);
+          const td1 = tr.insertCell(1);
+          const td2 = tr.insertCell(2);
+
+          td0.innerHTML = cartItems[cartItem].name;
+          td1.innerHTML = cartItems[cartItem].remark;
+          td2.innerHTML = cartItems[cartItem].price;
+          total += cartItems[cartItem].price;
+        }
+
+        document.querySelector("#totalPrice").innerHTML = total;
+
+
+        // get an order, to receive the clientsecret all the cart items
+        app.client.request(undefined, 'api/order', 'GET', undefined, undefined, (statusCode, responsePayload) => {
+          if (responsePayload && statusCode === 200) {
+            clientsecret = responsePayload.client_secret;
+          }
+        });
+        document.querySelector("#confirmPayment").addEventListener("click", function (e) {
+
+          // Stop it from redirecting anywhere
+          e.preventDefault();
+
+          // add item to cart
+          app.confirmPayment(cardElement, userEmail);
+
+        });
+      }
+    });
+
+  } else {
+    app.logUserOut();
+  }
+}
+
+app.loadShowOrderCompletePage = () => {
+  // Get the email from the current token, or log the user out if none is there
+  var token = typeof (app.config.sessionToken.id) == 'string' ? app.config.sessionToken.id : false;
+
+  if (token) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const waitTime = urlParams.get('waitTime');
+    document.querySelector("#waitTime").innerHTML = waitTime;
+  } else {
+    app.logUserOut();
+  }
+}
 
 // Loop to renew token often
 app.tokenRenewalLoop = function () {
@@ -556,9 +755,13 @@ app.init = function () {
   // Load data on page
   app.loadDataOnPage();
 
+  // Show cart count (if any)
+  app.showCartCount();
+
 };
 
 // Call the init processes after the window loads
 window.onload = function () {
+  stripe = Stripe('pk_test_51IMUBkFS5QH3zEzPoJpTWfIlyjQwrDi8UAZ9M3iua75QZwDstignQFD7iqpULj0zdZ8u4waGKpV5HOKVcz6l2emB00A9ZEdgxE');
   app.init();
 };

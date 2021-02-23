@@ -17,6 +17,8 @@
   <link type="image/x-icon" rel="icon" href="favicon.ico" />
   <script type="text/javascript" charset="utf-8" src="public/app.js"></script>
   <link rel="stylesheet" type="text/css" href="public/app.css" />
+
+  <script src="https://js.stripe.com/v3/"></script>
 </head>
 
 <body class="{body.class}">
@@ -42,6 +44,10 @@
         </li>
         <li class="loggedIn">
           <a href="/menu">Menu</a>
+        </li>
+        <li class="loggedIn" style="position:relative;">
+          <a href="/cart">Cart</a>
+          <div id="cartMenuButton"></div>
         </li>
         <li class="loggedIn">
           <a href="/account/edit">Account Settings</a>
